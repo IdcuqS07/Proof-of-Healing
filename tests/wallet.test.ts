@@ -73,7 +73,7 @@ describe("wallet connector", () => {
     expect(hasNativeWallet()).toBe(true);
 
     const wallet = await connectWallet();
-    expect(lace.connect).toHaveBeenCalledWith("testnet");
+    expect(lace.connect).toHaveBeenCalledWith("preview");
     expect(wallet).toMatchObject({
       address: "mn_shield-addr_test1real",
       balance: 3_000_500,

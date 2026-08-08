@@ -56,6 +56,9 @@ badge → peer group) tetap dapat dicoba end-to-end.
 # Midnight local dev container (proof server + node + indexer)
 docker compose -f docker/midnight-devnet.yml up -d
 export NEXT_PUBLIC_MIDNIGHT_PROOF_SERVER=http://localhost:6300
+# id jaringan yang diterima wallet: preview (testnet publik, default),
+# undeployed (devnet lokal di atas), preprod, mainnet
+export NEXT_PUBLIC_MIDNIGHT_NETWORK_ID=undeployed
 npm run dev
 ```
 

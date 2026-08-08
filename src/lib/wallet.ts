@@ -15,7 +15,11 @@ export interface WalletState {
 
 const MOCK_STORAGE_KEY = "poh.mock-wallet";
 const MOCK_INITIAL_BALANCE = 25_000_000;
-const NETWORK_ID = process.env.NEXT_PUBLIC_MIDNIGHT_NETWORK_ID ?? "testnet";
+/**
+ * Network ids accepted by the wallet: `preview` is the public Midnight testnet,
+ * `undeployed` the local devnet in `docker/midnight-devnet.yml`.
+ */
+const NETWORK_ID = process.env.NEXT_PUBLIC_MIDNIGHT_NETWORK_ID ?? "preview";
 
 /**
  * Picks an injected wallet following the DApp Connector API: wallets register
