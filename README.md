@@ -60,19 +60,39 @@ npm run dev
 ```
 
 Ketika `NEXT_PUBLIC_MIDNIGHT_PROOF_SERVER` diset, `src/lib/zk.ts` mengirim witness ke proof
-server alih-alih membuat bukti lokal. Isi `docker/midnight-devnet.yml` mengikuti image resmi
-Midnight; sesuaikan tag image dengan rilis testnet yang Anda pakai.
+server alih-alih membuat bukti lokal.
+
+Compose file ini sudah diuji jalan (network `undeployed`) dengan tag yang dipin:
+`proof-server:8.1.0` (`/health` → `{"status":"ok"}`), `midnight-node:1.0.1` (memproduksi blok
+dengan `CFG_PRESET=dev`), dan `indexer-standalone:4.3.5` (GraphQL di
+`http://localhost:8088/api/v4/graphql` mengikuti tinggi blok node).
 
 ### Mengompilasi smart contract
 
 ```bash
-# compactc dari Midnight Compact developer tools
-compactc contracts/src/ProofOfHealingNative.compact contracts/build
+# 1. pasang Compact developer tools (sekali saja)
+curl --proto '=https' --tlsv1.2 -LsSf \
+  https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh | sh
+export PATH="$HOME/.compact/bin:$PATH"
+compact update
+
+# 2. kompilasi kontrak
+npm run compact:build
 ```
 
-Catatan: `compactc` tidak tersedia di lingkungan CI publik, sehingga kontrak dikompilasi
-secara lokal. Semua assertion kontrak dicerminkan satu-per-satu di
-`src/lib/contract/simulator.ts` dan diuji oleh test suite.
+Kontrak sudah terverifikasi dengan **compactc 0.31.1**: keempat circuit terkompilasi dan
+menghasilkan prover/verifier key serta ZKIR di `contracts/build/`:
+
+```
+Compiling 4 circuits:
+contracts/build/contract/index.{js,d.ts}
+contracts/build/keys/{registerAndStake,verifyDailyHabit,verifyStreakMilestone,provePeerGroupAccess}.{prover,verifier}
+contracts/build/zkir/*.{zkir,bzkir}
+```
+
+`compactc` tidak tersedia sebagai paket npm publik sehingga CI tidak mengompilasi kontrak;
+semua assertion kontrak dicerminkan satu-per-satu di `src/lib/contract/simulator.ts` dan
+diuji oleh test suite.
 
 ## Pengujian
 

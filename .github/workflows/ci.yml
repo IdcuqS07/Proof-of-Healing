@@ -15,6 +15,12 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - name: Compile the Compact contract
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf \
+            https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh | sh
+          echo "$HOME/.compact/bin" >> "$GITHUB_PATH"
+      - run: compact update && npm run compact:build
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test

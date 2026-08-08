@@ -34,3 +34,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# compact compiler output (prover/verifier keys are ~11 MB; regenerate with npm run compact:build)
+contracts/build/keys
+contracts/build/compiler

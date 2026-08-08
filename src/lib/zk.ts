@@ -1,4 +1,5 @@
 import { sha256, toHex } from "./crypto";
+import { PROOF_SERVER_URL, proofServerStatus } from "./midnight/proof-server";
 import type { PowResult } from "./pow";
 
 export interface ZkProof {
@@ -12,15 +13,19 @@ export interface ZkProof {
   generatedAt: string;
   /** Set when the proof came from the local simulator instead of a proof server. */
   simulated: boolean;
+  /** Version reported by the proof server, when one is reachable. */
+  proofServerVersion?: string;
 }
 
-const PROOF_SERVER_URL = process.env.NEXT_PUBLIC_MIDNIGHT_PROOF_SERVER;
-
 /**
- * Builds a proof for a circuit. When `NEXT_PUBLIC_MIDNIGHT_PROOF_SERVER` points
- * at a running Midnight proof server the witness is sent there; otherwise the
- * proof is derived locally so the flow — including the PoW gate — stays intact
- * without the dev container.
+ * Builds a proof for a circuit.
+ *
+ * When `NEXT_PUBLIC_MIDNIGHT_PROOF_SERVER` is set the server must answer its health
+ * probe, otherwise proving fails loudly instead of silently degrading. Real
+ * transaction-level proving (`/check` + `/prove`) additionally needs a deployed
+ * contract address and a wallet that can serialise an unproven transaction, so
+ * until that is configured the proof is derived locally and flagged as simulated
+ * everywhere it is displayed or stored.
  */
 export async function generateProof(
   circuit: ZkProof["circuit"],
@@ -30,22 +35,11 @@ export async function generateProof(
 ): Promise<ZkProof> {
   const generatedAt = new Date().toISOString();
 
-  if (PROOF_SERVER_URL) {
-    const response = await fetch(`${PROOF_SERVER_URL}/prove`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ circuit, publicInputs, privateWitness }),
-    });
-    if (!response.ok) throw new Error(`proof server rejected the witness: ${response.status}`);
-    const { proof } = (await response.json()) as { proof: string };
-    return {
-      circuit,
-      publicInputs,
-      proof,
-      proofId: toHex(await sha256(proof)).slice(0, 32),
-      generatedAt,
-      simulated: false,
-    };
+  const server = PROOF_SERVER_URL ? await proofServerStatus() : null;
+  if (PROOF_SERVER_URL && !server?.reachable) {
+    throw new Error(
+      `proof server ${PROOF_SERVER_URL} is not reachable${server?.detail ? `: ${server.detail}` : ""}`,
+    );
   }
 
   const commitment = toHex(
@@ -58,5 +52,6 @@ export async function generateProof(
     proofId: commitment.slice(0, 32),
     generatedAt,
     simulated: true,
+    proofServerVersion: server?.version,
   };
 }

@@ -1,4 +1,4 @@
-pragma language_version >= 0.16;
+pragma language_version >= 0.20;
 
 import CompactStandardLibrary;
 
@@ -12,11 +12,15 @@ import CompactStandardLibrary;
 ///   * aggregate counters used for the public dashboard
 
 /// Minimum spacing between two accepted daily proofs: 18 hours.
-export const COOLDOWN_SECONDS: Uint<64> = 64800;
+export pure circuit cooldownSeconds(): Uint<64> {
+  return 64800;
+}
 
 /// Micro-bond, in the smallest unit of the staking token, locked at registration
 /// and refunded when a milestone is verified.
-export const STAKE_AMOUNT: Uint<64> = 1000000;
+export pure circuit requiredStake(): Uint<64> {
+  return 1000000;
+}
 
 export ledger userCommitments: Map<Bytes<32>, Uint<64>>;
 export ledger stakedBond: Map<Bytes<32>, Uint<64>>;
@@ -26,7 +30,7 @@ export ledger totalMilestonesVerified: Counter;
 export ledger totalRegistered: Counter;
 
 /// Derives the public, unlinkable commitment of a user from their local secret.
-circuit commitmentOf(userSecretSeed: Bytes<32>): Bytes<32> {
+pure circuit commitmentOf(userSecretSeed: Bytes<32>): Bytes<32> {
   return persistentHash<Bytes<32>>(userSecretSeed);
 }
 
@@ -39,14 +43,14 @@ export circuit registerAndStake(
   userSecretSeed: Bytes<32>,
   stakeAmount: Uint<64>
 ): [] {
-  const commitment = commitmentOf(userSecretSeed);
+  const commitment = disclose(commitmentOf(userSecretSeed));
   assert(!userCommitments.member(commitment), "already registered");
-  assert(stakeAmount >= STAKE_AMOUNT, "stake below required micro-bond");
+  assert(stakeAmount >= requiredStake(), "stake below required micro-bond");
 
   // Seed the cooldown clock in the past so the first daily proof is accepted
   // immediately after registration.
   userCommitments.insert(commitment, 0);
-  stakedBond.insert(commitment, stakeAmount);
+  stakedBond.insert(commitment, disclose(stakeAmount));
   dailyProofCount.insert(commitment, 0);
   totalRegistered.increment(1);
 }
@@ -58,13 +62,13 @@ export circuit verifyDailyHabit(
   dailyCommitmentHash: Bytes<32>,
   blockTime: Uint<64>
 ): [] {
-  const commitment = commitmentOf(userSecretSeed);
+  const commitment = disclose(commitmentOf(userSecretSeed));
   assert(userCommitments.member(commitment), "not registered");
-  assert(stakedBond.lookup(commitment) >= STAKE_AMOUNT, "micro-bond not locked");
+  assert(stakedBond.lookup(commitment) >= requiredStake(), "micro-bond not locked");
 
   const lastTimestamp = userCommitments.lookup(commitment);
   assert(
-    blockTime - lastTimestamp >= COOLDOWN_SECONDS,
+    blockTime - lastTimestamp >= cooldownSeconds(),
     "interaction too fast (bot detected)"
   );
 
@@ -72,8 +76,9 @@ export circuit verifyDailyHabit(
   // locally stored, encrypted journal entry without revealing it.
   assert(dailyCommitmentHash != default<Bytes<32>>, "empty daily commitment");
 
-  userCommitments.insert(commitment, blockTime);
-  dailyProofCount.insert(commitment, dailyProofCount.lookup(commitment) + 1);
+  userCommitments.insert(commitment, disclose(blockTime));
+  const nextCount = (dailyProofCount.lookup(commitment) + 1) as Uint<64>;
+  dailyProofCount.insert(commitment, nextCount);
 }
 
 /// 3. Prove `streakLength >= requiredDays` (FR-3.1), mint the anonymous badge
@@ -83,7 +88,7 @@ export circuit verifyStreakMilestone(
   streakLength: Uint<32>,
   requiredDays: Uint<32>
 ): [] {
-  const commitment = commitmentOf(userSecretSeed);
+  const commitment = disclose(commitmentOf(userSecretSeed));
   assert(userCommitments.member(commitment), "not registered");
   assert(streakLength >= requiredDays, "streak below milestone threshold");
   assert(
@@ -96,7 +101,7 @@ export circuit verifyStreakMilestone(
     : 0;
   assert(requiredDays > previousBadge, "milestone already claimed");
 
-  claimedBadges.insert(commitment, requiredDays);
+  claimedBadges.insert(commitment, disclose(requiredDays));
   stakedBond.insert(commitment, 0);
   totalMilestonesVerified.increment(1);
 }
@@ -107,7 +112,7 @@ export circuit provePeerGroupAccess(
   userSecretSeed: Bytes<32>,
   requiredDays: Uint<32>
 ): Boolean {
-  const commitment = commitmentOf(userSecretSeed);
+  const commitment = disclose(commitmentOf(userSecretSeed));
   assert(claimedBadges.member(commitment), "no badge");
   return claimedBadges.lookup(commitment) >= requiredDays;
 }

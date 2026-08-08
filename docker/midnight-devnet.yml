@@ -1,16 +1,19 @@
 # Lingkungan uji coba lokal Midnight (proof server + node + indexer).
-# Sesuaikan tag image dengan rilis testnet Midnight yang Anda pakai; daftar tag
-# resmi ada di https://docs.midnight.network.
+# Tag di bawah diverifikasi ada di Docker Hub (organisasi resmi: midnightntwrk).
+# Endpoint mengikuti network `undeployed` pada dokumentasi Midnight:
+#   node RPC        http://localhost:9944
+#   indexer GraphQL http://localhost:8088/api/v4/graphql
+#   proof server    http://localhost:6300
 services:
   proof-server:
-    image: midnightnetwork/proof-server:latest
+    image: midnightntwrk/proof-server:8.1.0
     container_name: poh-proof-server
     command: ["midnight-proof-server", "--verbose"]
     ports:
       - "6300:6300"
 
   node:
-    image: midnightnetwork/midnight-node:latest
+    image: midnightntwrk/midnight-node:1.0.1
     container_name: poh-node
     environment:
       CFG_PRESET: dev
@@ -18,12 +21,15 @@ services:
       - "9944:9944"
 
   indexer:
-    image: midnightntwrk/indexer-standalone:latest
+    image: midnightntwrk/indexer-standalone:4.3.5
     container_name: poh-indexer
     depends_on:
       - node
     environment:
       RUST_LOG: info
-      APP__INFRA__SUBSTRATE__URL: ws://node:9944
+      APP__INFRA__NODE__URL: ws://node:9944
+      APP__INFRA__SPO_NODE__URL: ws://node:9944
+      APP__INFRA__SPO_NODE__BLOCKFROST_ID: local-dev
+      APP__INFRA__SECRET: "303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f"
     ports:
       - "8088:8088"
