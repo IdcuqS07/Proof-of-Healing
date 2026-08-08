@@ -148,7 +148,10 @@ Panduan lengkap: [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md).
 - **Wave 1** — kontrak Compact (stake + cooldown), node lokal, wireframe UI. ✔
 - **Wave 2** — integrasi SDK Midnight, PoW peramban, generator ZK proof streak. ✔ (prover
   nyata aktif saat proof server tersedia)
-- **Wave 3** — penyempurnaan UI/UX, cakupan test, video demo, grup anonim terdesentralisasi.
+- **Wave 3** — penyempurnaan UI/UX, cakupan test, grup anonim dengan verifikasi badge + rantai
+  hash tanpa server. ✔
+- **Berikutnya** — deploy & stake/refund on-chain via wallet extension di testnet, transport peer
+  group lintas perangkat ([ADR-002](docs/ADR-002-onchain-path.md)).
 
 ## Lisensi
 
