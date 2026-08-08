@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useApp } from "@/state/app-provider";
 import { Badge, Button, Card } from "@/components/ui";
 import {
   PEER_GROUP_GATE_DAYS as GATE_DAYS,
   aliasFor,
-  readPeerGroupMessages,
-  writePeerGroupMessages,
+  createLocalTransport,
+  signMessage,
+  verifiedMessages,
   type GroupMessage,
 } from "@/lib/peer-group";
 
@@ -16,16 +17,27 @@ export default function GroupPage() {
   const { ready, account, badges, checkPeerAccess } = useApp();
   const [allowed, setAllowed] = useState<boolean | null>(null);
   const [messages, setMessages] = useState<GroupMessage[]>([]);
+  const [rejected, setRejected] = useState(0);
   const [draft, setDraft] = useState("");
+  const transport = useMemo(() => createLocalTransport(), []);
 
   useEffect(() => {
     if (!account) {
       setAllowed(false);
       return;
     }
+
     void checkPeerAccess(GATE_DAYS).then(setAllowed);
-    setMessages(readPeerGroupMessages());
-  }, [account, badges, checkPeerAccess]);
+
+    const accept = async (feed: GroupMessage[]) => {
+      const verified = await verifiedMessages(feed, GATE_DAYS);
+      setMessages(verified);
+      setRejected(feed.length - verified.length);
+    };
+
+    void accept(transport.read());
+    return transport.subscribe((feed) => void accept(feed));
+  }, [account, badges, checkPeerAccess, transport]);
 
   if (!ready || allowed === null) return <p className="text-slate-500">Memverifikasi ZK Badge…</p>;
 
@@ -57,6 +69,7 @@ export default function GroupPage() {
   }
 
   const alias = aliasFor(account.commitment);
+  const badge = [...badges].sort((a, b) => b.requiredDays - a.requiredDays)[0];
 
   return (
     <div className="space-y-6">
@@ -74,11 +87,19 @@ export default function GroupPage() {
           onSubmit={(event) => {
             event.preventDefault();
             const body = draft.trim();
-            if (!body) return;
-            const next = [...messages, { alias, body, at: new Date().toISOString() }];
-            setMessages(next);
-            writePeerGroupMessages(next);
-            setDraft("");
+            if (!body || !badge) return;
+
+            void signMessage(messages, {
+              alias,
+              body,
+              at: new Date().toISOString(),
+              badgeDays: badge.requiredDays,
+              proofId: badge.proofId,
+            }).then((message) => {
+              setMessages([...messages, message]);
+              transport.publish(message);
+              setDraft("");
+            });
           }}
         >
           <textarea
@@ -108,8 +129,9 @@ export default function GroupPage() {
           ))}
         </ul>
         <p className="mt-4 text-xs text-slate-600">
-          Feed grup disimulasikan secara lokal pada Wave 2; lapisan pesan terdesentralisasi masuk
-          roadmap Wave 3.
+          Setiap pesan membawa badge penulis dan tertaut hash ke pesan sebelumnya, lalu diverifikasi
+          ulang saat dibaca — feed direplikasi antar tab lewat BroadcastChannel tanpa server.
+          {rejected > 0 ? ` ${rejected} pesan ditolak karena gagal verifikasi.` : ""}
         </p>
       </Card>
     </div>
