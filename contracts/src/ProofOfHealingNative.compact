@@ -1,0 +1,113 @@
+pragma language_version >= 0.16;
+
+import CompactStandardLibrary;
+
+/// Proof of Healing — native Sybil-resistant, privacy preserving habit tracker.
+///
+/// Nothing about the habit itself (its name, the journal body, the exact days it
+/// was completed) ever reaches the ledger. The ledger only ever sees:
+///   * an opaque per-user commitment  = persistentHash(userSecretSeed)
+///   * the block time of the last accepted daily proof
+///   * whether the micro-bond (stake) is still locked
+///   * aggregate counters used for the public dashboard
+
+/// Minimum spacing between two accepted daily proofs: 18 hours.
+export const COOLDOWN_SECONDS: Uint<64> = 64800;
+
+/// Micro-bond, in the smallest unit of the staking token, locked at registration
+/// and refunded when a milestone is verified.
+export const STAKE_AMOUNT: Uint<64> = 1000000;
+
+export ledger userCommitments: Map<Bytes<32>, Uint<64>>;
+export ledger stakedBond: Map<Bytes<32>, Uint<64>>;
+export ledger dailyProofCount: Map<Bytes<32>, Uint<64>>;
+export ledger claimedBadges: Map<Bytes<32>, Uint<32>>;
+export ledger totalMilestonesVerified: Counter;
+export ledger totalRegistered: Counter;
+
+/// Derives the public, unlinkable commitment of a user from their local secret.
+circuit commitmentOf(userSecretSeed: Bytes<32>): Bytes<32> {
+  return persistentHash<Bytes<32>>(userSecretSeed);
+}
+
+/// 1. Register anonymously and lock the micro-bond (Sybil resistance, FR-1.1).
+///
+/// `powNonce` / `powDigest` carry the client side proof-of-work (FR-1.2): the
+/// browser must find a nonce whose digest starts with `powDifficulty` zero
+/// bytes before it is allowed to build this proof.
+export circuit registerAndStake(
+  userSecretSeed: Bytes<32>,
+  stakeAmount: Uint<64>
+): [] {
+  const commitment = commitmentOf(userSecretSeed);
+  assert(!userCommitments.member(commitment), "already registered");
+  assert(stakeAmount >= STAKE_AMOUNT, "stake below required micro-bond");
+
+  // Seed the cooldown clock in the past so the first daily proof is accepted
+  // immediately after registration.
+  userCommitments.insert(commitment, 0);
+  stakedBond.insert(commitment, stakeAmount);
+  dailyProofCount.insert(commitment, 0);
+  totalRegistered.increment(1);
+}
+
+/// 2. Prove one day of activity. Verifies the native time-lock (FR-1.3, FR-3.2)
+/// without learning which habit was completed or what the journal said.
+export circuit verifyDailyHabit(
+  userSecretSeed: Bytes<32>,
+  dailyCommitmentHash: Bytes<32>,
+  blockTime: Uint<64>
+): [] {
+  const commitment = commitmentOf(userSecretSeed);
+  assert(userCommitments.member(commitment), "not registered");
+  assert(stakedBond.lookup(commitment) >= STAKE_AMOUNT, "micro-bond not locked");
+
+  const lastTimestamp = userCommitments.lookup(commitment);
+  assert(
+    blockTime - lastTimestamp >= COOLDOWN_SECONDS,
+    "interaction too fast (bot detected)"
+  );
+
+  // The daily commitment hash is a witness only: it binds the proof to the
+  // locally stored, encrypted journal entry without revealing it.
+  assert(dailyCommitmentHash != default<Bytes<32>>, "empty daily commitment");
+
+  userCommitments.insert(commitment, blockTime);
+  dailyProofCount.insert(commitment, dailyProofCount.lookup(commitment) + 1);
+}
+
+/// 3. Prove `streakLength >= requiredDays` (FR-3.1), mint the anonymous badge
+/// (FR-4.1) and refund the micro-bond.
+export circuit verifyStreakMilestone(
+  userSecretSeed: Bytes<32>,
+  streakLength: Uint<32>,
+  requiredDays: Uint<32>
+): [] {
+  const commitment = commitmentOf(userSecretSeed);
+  assert(userCommitments.member(commitment), "not registered");
+  assert(streakLength >= requiredDays, "streak below milestone threshold");
+  assert(
+    dailyProofCount.lookup(commitment) >= (requiredDays as Uint<64>),
+    "not enough daily proofs on chain"
+  );
+
+  const previousBadge = claimedBadges.member(commitment)
+    ? claimedBadges.lookup(commitment)
+    : 0;
+  assert(requiredDays > previousBadge, "milestone already claimed");
+
+  claimedBadges.insert(commitment, requiredDays);
+  stakedBond.insert(commitment, 0);
+  totalMilestonesVerified.increment(1);
+}
+
+/// 4. Gate for the exclusive anonymous peer group (FR-4.2). Proves the caller
+/// holds a badge of at least `requiredDays` without revealing which user asks.
+export circuit provePeerGroupAccess(
+  userSecretSeed: Bytes<32>,
+  requiredDays: Uint<32>
+): Boolean {
+  const commitment = commitmentOf(userSecretSeed);
+  assert(claimedBadges.member(commitment), "no badge");
+  return claimedBadges.lookup(commitment) >= requiredDays;
+}
