@@ -10,9 +10,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "compact:build": "compact compile contracts/src/ProofOfHealingNative.compact contracts/build"
+    "compact:build": "compact compile contracts/src/ProofOfHealingNative.compact contracts/build && node -e \"require('fs').writeFileSync('contracts/build/contract/package.json', JSON.stringify({type:'module'})+'\\n')\""
   },
   "dependencies": {
+    "@midnight-ntwrk/dapp-connector-api": "^4.0.1",
     "idb": "^8.0.3",
     "next": "14.2.35",
     "react": "^18",

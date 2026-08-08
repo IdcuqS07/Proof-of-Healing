@@ -1,3 +1,4 @@
+import type { ConnectedAPI, InitialAPI } from "@midnight-ntwrk/dapp-connector-api";
 import { randomSeedHex } from "./crypto";
 
 export interface WalletState {
@@ -6,25 +7,27 @@ export interface WalletState {
   network: string;
   /** True when the browser exposes a real Midnight extension wallet. */
   native: boolean;
-}
-
-export interface MidnightWalletApi {
-  enable(): Promise<{ state(): Promise<{ address: string; balance?: bigint | number }> }>;
-  serviceUriConfig?(): Promise<Record<string, string>>;
-}
-
-declare global {
-  interface Window {
-    midnight?: { mnLace?: MidnightWalletApi } & Record<string, MidnightWalletApi | undefined>;
-  }
+  /** Name reported by the injected wallet, e.g. "Lace". */
+  walletName?: string;
+  /** Indexer/node/proof server the connected wallet is pointing at. */
+  services?: { indexerUri: string; substrateNodeUri: string; proverServerUri?: string };
 }
 
 const MOCK_STORAGE_KEY = "poh.mock-wallet";
 const MOCK_INITIAL_BALANCE = 25_000_000;
+const NETWORK_ID = process.env.NEXT_PUBLIC_MIDNIGHT_NETWORK_ID ?? "testnet";
 
-function detectInjectedWallet(): MidnightWalletApi | null {
+/**
+ * Picks an injected wallet following the DApp Connector API: wallets register
+ * themselves under `window.midnight[<rdns-ish key>]`, so prefer Lace and fall
+ * back to whichever instance exposes `connect`.
+ */
+function detectInjectedWallet(): InitialAPI | null {
   if (typeof window === "undefined" || !window.midnight) return null;
-  return window.midnight.mnLace ?? Object.values(window.midnight).find(Boolean) ?? null;
+  const candidates = Object.values(window.midnight).filter(
+    (api): api is InitialAPI => typeof api?.connect === "function",
+  );
+  return candidates.find((api) => api.rdns?.includes("lace")) ?? candidates[0] ?? null;
 }
 
 export function hasNativeWallet(): boolean {
@@ -70,21 +73,40 @@ export function adjustMockWalletBalance(amount: number): WalletState | null {
   return updated;
 }
 
+/** Total shielded balance across every token the wallet holds. */
+async function shieldedBalance(connected: ConnectedAPI): Promise<bigint> {
+  const balances = await connected.getShieldedBalances();
+  return Object.values(balances).reduce((total, amount) => total + amount, 0n);
+}
+
 /**
- * Connects the Midnight Extension Wallet when present, otherwise falls back to
- * a local development wallet so the whole flow stays testable without the
- * extension and the Midnight dev container.
+ * Connects the Midnight Extension Wallet through the DApp Connector API when it
+ * is present, otherwise falls back to a local development wallet so the whole
+ * flow stays testable without the extension and the Midnight dev container.
  */
 export async function connectWallet(): Promise<WalletState> {
   const injected = detectInjectedWallet();
   if (!injected) return readOrCreateMockWallet();
 
-  const connector = await injected.enable();
-  const state = await connector.state();
+  const connected = await injected.connect(NETWORK_ID);
+  await connected.hintUsage(["getShieldedAddresses", "getShieldedBalances", "getConfiguration"]);
+
+  const [{ shieldedAddress }, balance, configuration] = await Promise.all([
+    connected.getShieldedAddresses(),
+    shieldedBalance(connected),
+    connected.getConfiguration(),
+  ]);
+
   return {
-    address: state.address,
-    balance: Number(state.balance ?? 0),
-    network: "Midnight testnet",
+    address: shieldedAddress,
+    balance: Number(balance),
+    network: configuration.networkId,
     native: true,
+    walletName: injected.name,
+    services: {
+      indexerUri: configuration.indexerUri,
+      substrateNodeUri: configuration.substrateNodeUri,
+      proverServerUri: configuration.proverServerUri,
+    },
   };
 }

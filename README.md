@@ -34,7 +34,7 @@ CLIENT (browser)                                 ON-CHAIN (Midnight)
 | Smart contract | `contracts/src/ProofOfHealingNative.compact` |
 | Mirror kontrak untuk dApp & test | `src/lib/contract/simulator.ts` |
 | Frontend | Next.js 14 (App Router) + TypeScript + Tailwind |
-| Penyimpanan lokal | IndexedDB (`idb`), AES-256-GCM + PBKDF2 (`src/lib/crypto.ts`) |
+| Penyimpanan lokal | IndexedDB (`idb`), AES-256-GCM + PBKDF2 (`src/lib/crypto.ts`) — alasan tidak memakai RxDB: [ADR-001](docs/ADR-001-local-store.md) |
 | Anti-bot klien | `src/lib/pow.ts` (SHA-256 PoW, difficulty 5 nibble) |
 | Wallet | `src/lib/wallet.ts` — Midnight Extension Wallet, fallback wallet dev lokal |
 | Prover | `src/lib/zk.ts` — proof server Midnight bila tersedia, jika tidak proof lokal |
