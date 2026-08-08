@@ -31,9 +31,14 @@ export function hasNativeWallet(): boolean {
   return detectInjectedWallet() !== null;
 }
 
-function readMockWallet(): WalletState {
+export function readMockWallet(): WalletState | null {
   const stored = typeof window !== "undefined" ? window.localStorage.getItem(MOCK_STORAGE_KEY) : null;
-  if (stored) return JSON.parse(stored) as WalletState;
+  return stored ? (JSON.parse(stored) as WalletState) : null;
+}
+
+function readOrCreateMockWallet(): WalletState {
+  const stored = readMockWallet();
+  if (stored) return stored;
   const wallet: WalletState = {
     address: `mn_shield-addr_test1${randomSeedHex().slice(0, 32)}`,
     balance: MOCK_INITIAL_BALANCE,
@@ -48,6 +53,23 @@ export function writeMockWallet(wallet: WalletState): void {
   window.localStorage.setItem(MOCK_STORAGE_KEY, JSON.stringify(wallet));
 }
 
+export function clearMockWallet(): void {
+  window.localStorage.removeItem(MOCK_STORAGE_KEY);
+}
+
+/**
+ * Moves `amount` in or out of the local development wallet. Reads from storage
+ * instead of React state so a refund still lands when the session was reloaded
+ * and no wallet is currently connected in the UI.
+ */
+export function adjustMockWalletBalance(amount: number): WalletState | null {
+  const stored = readMockWallet();
+  if (!stored) return null;
+  const updated = { ...stored, balance: stored.balance + amount };
+  writeMockWallet(updated);
+  return updated;
+}
+
 /**
  * Connects the Midnight Extension Wallet when present, otherwise falls back to
  * a local development wallet so the whole flow stays testable without the
@@ -55,7 +77,7 @@ export function writeMockWallet(wallet: WalletState): void {
  */
 export async function connectWallet(): Promise<WalletState> {
   const injected = detectInjectedWallet();
-  if (!injected) return readMockWallet();
+  if (!injected) return readOrCreateMockWallet();
 
   const connector = await injected.enable();
   const state = await connector.state();
