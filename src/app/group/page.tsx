@@ -4,37 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useApp } from "@/state/app-provider";
 import { Badge, Button, Card } from "@/components/ui";
-
-interface GroupMessage {
-  alias: string;
-  body: string;
-  at: string;
-}
-
-const STORAGE_KEY = "poh.peer-group";
-const GATE_DAYS = 7;
-
-const SEED_MESSAGES: GroupMessage[] = [
-  {
-    alias: "healer-4f2a",
-    body: "Hari ke-9 meditasi. Yang membantu saya: alarm 10 menit sebelum tidur.",
-    at: "2026-08-01T09:12:00.000Z",
-  },
-  {
-    alias: "healer-91cd",
-    body: "Streak saya pernah putus di hari ke-5 dan itu tidak masalah. Mulai lagi hari ini.",
-    at: "2026-08-02T15:40:00.000Z",
-  },
-];
-
-function aliasFor(commitment: string): string {
-  return `healer-${commitment.slice(0, 4)}`;
-}
-
-function readMessages(): GroupMessage[] {
-  const stored = window.localStorage.getItem(STORAGE_KEY);
-  return stored ? (JSON.parse(stored) as GroupMessage[]) : SEED_MESSAGES;
-}
+import {
+  PEER_GROUP_GATE_DAYS as GATE_DAYS,
+  aliasFor,
+  readPeerGroupMessages,
+  writePeerGroupMessages,
+  type GroupMessage,
+} from "@/lib/peer-group";
 
 export default function GroupPage() {
   const { ready, account, badges, checkPeerAccess } = useApp();
@@ -48,7 +24,7 @@ export default function GroupPage() {
       return;
     }
     void checkPeerAccess(GATE_DAYS).then(setAllowed);
-    setMessages(readMessages());
+    setMessages(readPeerGroupMessages());
   }, [account, badges, checkPeerAccess]);
 
   if (!ready || allowed === null) return <p className="text-slate-500">Memverifikasi ZK Badge…</p>;
@@ -101,7 +77,7 @@ export default function GroupPage() {
             if (!body) return;
             const next = [...messages, { alias, body, at: new Date().toISOString() }];
             setMessages(next);
-            window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+            writePeerGroupMessages(next);
             setDraft("");
           }}
         >

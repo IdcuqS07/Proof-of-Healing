@@ -13,7 +13,15 @@ import * as chain from "@/lib/chain";
 import * as db from "@/lib/db";
 import { dailyCommitmentHash, randomSeedHex } from "@/lib/crypto";
 import { COOLDOWN_SECONDS, STAKE_AMOUNT, ProofOfHealingContract } from "@/lib/contract/simulator";
-import { connectWallet, hasNativeWallet, writeMockWallet, type WalletState } from "@/lib/wallet";
+import {
+  adjustMockWalletBalance,
+  clearMockWallet,
+  connectWallet,
+  hasNativeWallet,
+  readMockWallet,
+  type WalletState,
+} from "@/lib/wallet";
+import { clearPeerGroupMessages } from "@/lib/peer-group";
 import { currentStreak, longestStreak, todayISO } from "@/lib/streak";
 import { MILESTONES, type AccountState, type BadgeRecord, type DailyProofRecord, type Habit, type JournalEntry } from "@/lib/types";
 
@@ -83,6 +91,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void (async () => {
+      // Reconnect the local development wallet so a reload does not silently
+      // drop the wallet that owns the micro-bond.
+      setWallet(readMockWallet());
       const stored = await db.loadAccount();
       if (stored) {
         setAccount(stored);
@@ -144,11 +155,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         };
         await db.saveAccount(created);
         setAccount(created);
-        if (!wallet.native) {
-          const debited = { ...wallet, balance: wallet.balance - STAKE_AMOUNT };
-          writeMockWallet(debited);
-          setWallet(debited);
-        }
+        if (!wallet.native) setWallet(adjustMockWalletBalance(-STAKE_AMOUNT));
         await refresh(seedHex);
         return `Terdaftar anonim. Micro-bond terkunci, tx ${receipt.txId.slice(0, 12)}…`;
       }),
@@ -244,6 +251,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     (requiredDays: number) =>
       run("milestone", async () => {
         if (!account) throw new Error("belum terdaftar");
+        const refundable = account.stakedAmount;
         const receipt = await chain.claimMilestone(account.seedHex, streak, requiredDays);
         await db.saveBadge({
           requiredDays,
@@ -251,20 +259,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
           txId: receipt.txId,
           proofId: receipt.proof.proofId,
         });
-        const refunded: AccountState = {
-          ...account,
-          stakedAmount: 0,
-          refundedAt: new Date().toISOString(),
-        };
-        await db.saveAccount(refunded);
-        setAccount(refunded);
-        if (wallet && !wallet.native) {
-          const credited = { ...wallet, balance: wallet.balance + STAKE_AMOUNT };
-          writeMockWallet(credited);
-          setWallet(credited);
+
+        // The bond is refunded by the first milestone only; later badges must not
+        // credit the wallet again.
+        let refundLanded = false;
+        if (refundable > 0) {
+          if (wallet?.native) {
+            refundLanded = true;
+          } else {
+            const credited = adjustMockWalletBalance(refundable);
+            refundLanded = credited !== null;
+            if (credited) setWallet(credited);
+          }
+          if (refundLanded) {
+            const refunded: AccountState = {
+              ...account,
+              stakedAmount: 0,
+              refundedAt: new Date().toISOString(),
+            };
+            await db.saveAccount(refunded);
+            setAccount(refunded);
+          }
         }
         await refresh(account.seedHex);
-        return `ZK Badge ${requiredDays} hari diterbitkan, deposit dikembalikan.`;
+        if (refundable > 0 && !refundLanded) {
+          return `ZK Badge ${requiredDays} hari diterbitkan. Hubungkan wallet untuk menarik deposit.`;
+        }
+        return refundable > 0
+          ? `ZK Badge ${requiredDays} hari diterbitkan, deposit dikembalikan.`
+          : `ZK Badge ${requiredDays} hari diterbitkan.`;
       }),
     [account, refresh, run, streak, wallet],
   );
@@ -285,6 +308,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     () =>
       run("wipe", async () => {
         await db.wipeLocalData();
+        clearPeerGroupMessages();
+        clearMockWallet();
+        setWallet(null);
         setAccount(null);
         setHabits([]);
         setEntries([]);
