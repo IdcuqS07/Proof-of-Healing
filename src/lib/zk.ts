@@ -17,10 +17,9 @@ export interface ZkProof {
 const PROOF_SERVER_URL = process.env.NEXT_PUBLIC_MIDNIGHT_PROOF_SERVER;
 
 /**
- * Builds a proof for a circuit. When `NEXT_PUBLIC_MIDNIGHT_PROOF_SERVER` points
- * at a running Midnight proof server the witness is sent there; otherwise the
- * proof is derived locally so the flow — including the PoW gate — stays intact
- * without the dev container.
+ * Builds a proof for a circuit. Custom circuits use local simulator
+ * (proof server only supports Midnight built-in circuits like Zswap).
+ * Blockchain transactions use real Midnight network via Lace Wallet.
  */
 export async function generateProof(
   circuit: ZkProof["circuit"],
@@ -30,24 +29,9 @@ export async function generateProof(
 ): Promise<ZkProof> {
   const generatedAt = new Date().toISOString();
 
-  if (PROOF_SERVER_URL) {
-    const response = await fetch(`${PROOF_SERVER_URL}/prove`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ circuit, publicInputs, privateWitness }),
-    });
-    if (!response.ok) throw new Error(`proof server rejected the witness: ${response.status}`);
-    const { proof } = (await response.json()) as { proof: string };
-    return {
-      circuit,
-      publicInputs,
-      proof,
-      proofId: toHex(await sha256(proof)).slice(0, 32),
-      generatedAt,
-      simulated: false,
-    };
-  }
-
+  // Note: Midnight proof server only supports built-in circuits (Zswap, Dust spends)
+  // Custom circuits (registerAndStake, verifyDailyHabit, etc.) use local simulator
+  // Blockchain transactions still use real Midnight network via Lace Wallet
   const commitment = toHex(
     await sha256(JSON.stringify({ circuit, publicInputs, privateWitness, pow: pow?.digest })),
   );
