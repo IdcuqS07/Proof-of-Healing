@@ -334,7 +334,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           ? `ZK Badge ${requiredDays} hari diterbitkan, deposit dikembalikan.`
           : `ZK Badge ${requiredDays} hari diterbitkan.`;
       }),
-    [account, refresh, run, streak, wallet],
+    [account, refresh, run, streak],
   );
 
   const checkPeerAccess = useCallback(

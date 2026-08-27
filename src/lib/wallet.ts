@@ -1,5 +1,3 @@
-import { randomSeedHex } from "./crypto";
-
 export interface WalletState {
   address: string;
   balance: number;
@@ -33,8 +31,8 @@ const EXPECTED_NETWORK_ID = "preview";
 declare global {
   interface Window {
     midnight?: { mnLace?: MidnightWalletApi } & Record<string, MidnightWalletApi | undefined>;
-    lace?: any;
-    cardano?: any;
+    lace?: unknown;
+    cardano?: unknown;
   }
 }
 
@@ -43,7 +41,7 @@ function detectInjectedWallet(): MidnightWalletApi | null {
   
   try {
     // Only access window.midnight when explicitly requested to avoid triggering extension communication
-    const midnight = (window as any).midnight;
+    const midnight = (window as unknown as Record<string, unknown>).midnight as { mnLace?: MidnightWalletApi } & Record<string, MidnightWalletApi | undefined>;
     if (!midnight) return null;
     
     // Check for 1AM wallet (official Midnight wallet)
@@ -72,8 +70,6 @@ function detectInjectedWallet(): MidnightWalletApi | null {
 /**
  * Connects to the Midnight Extension Wallet.
  */
-const validNetworks = ["preview", "preprod", "mainnet"];
-
 export async function connectWallet(): Promise<WalletState> {
   const injected = detectInjectedWallet();
   if (!injected) {
