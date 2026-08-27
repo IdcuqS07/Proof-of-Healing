@@ -145,13 +145,49 @@ export async function connectWallet(): Promise<WalletState> {
     let dustBalance;
     try {
       dustBalance = await connectedApi.getDustBalance();
-      console.log("Real wallet balance from API:", dustBalance);
+      console.log("Dust balance from API:", dustBalance);
     } catch (balanceError) {
       console.error("getDustBalance() failed:", balanceError);
-      throw new Error(`Failed to get wallet balance: ${balanceError instanceof Error ? balanceError.message : String(balanceError)}`);
     }
-    const balance = Number(dustBalance.balance);
-    console.log("Final balance to display:", balance, "from real wallet:", true);
+
+    // Try to get unshielded balance (for tNight from faucet)
+    let unshieldedBalance = 0;
+    try {
+      const unshieldedBalances = await connectedApi.getUnshieldedBalances();
+      console.log("Unshielded balances from API:", unshieldedBalances);
+      // Look for tNight or tDUST in the balances
+      for (const [token, amount] of Object.entries(unshieldedBalances)) {
+        console.log(`Token: ${token}, Amount: ${amount}`);
+        if (typeof amount === 'bigint') {
+          unshieldedBalance += Number(amount);
+        }
+      }
+    } catch (unshieldedBalanceError) {
+      console.error("getUnshieldedBalances() failed:", unshieldedBalanceError);
+    }
+
+    // Try to get shielded balance
+    let shieldedBalance = 0;
+    try {
+      const shieldedBalances = await connectedApi.getShieldedBalances();
+      console.log("Shielded balances from API:", shieldedBalances);
+      for (const [token, amount] of Object.entries(shieldedBalances)) {
+        console.log(`Shielded Token: ${token}, Amount: ${amount}`);
+        if (typeof amount === 'bigint') {
+          shieldedBalance += Number(amount);
+        }
+      }
+    } catch (shieldedBalanceError) {
+      console.error("getShieldedBalances() failed:", shieldedBalanceError);
+    }
+
+    // Use the highest balance found
+    const balance = Math.max(
+      dustBalance ? Number(dustBalance.balance) : 0,
+      unshieldedBalance,
+      shieldedBalance
+    );
+    console.log("Final balance to display:", balance, "(dust:", dustBalance?.balance, ", unshielded:", unshieldedBalance, ", shielded:", shieldedBalance, ")");
     
     // Verify network matches expected
     if (config.networkId !== EXPECTED_NETWORK_ID) {
