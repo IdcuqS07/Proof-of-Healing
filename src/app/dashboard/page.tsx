@@ -139,7 +139,7 @@ export default function DashboardPage() {
         footer={
           today ? (
             <p className="text-xs text-slate-500">
-              Today's commitment hash: <Mono>{today.commitmentHash}</Mono>
+              Today&apos;s commitment hash: <Mono>{today.commitmentHash}</Mono>
             </p>
           ) : null
         }
@@ -176,7 +176,7 @@ export default function DashboardPage() {
           </fieldset>
 
           <label className="block text-sm text-slate-400">
-            Today's mood: <span className="text-slate-200">{mood}/5</span>
+            Today&apos;s mood: <span className="text-slate-200">{mood}/5</span>
             <input
               type="range"
               min={1}
@@ -217,7 +217,7 @@ export default function DashboardPage() {
               </span>
             ) : null}
             {provenToday ? (
-              <Badge tone="emerald">Today's proof already accepted</Badge>
+              <Badge tone="emerald">Today&apos;s proof already accepted</Badge>
             ) : null}
           </div>
         </form>

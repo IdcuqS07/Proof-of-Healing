@@ -46,7 +46,7 @@ export default function GroupPage() {
         subtitle={`Need ZK Badge with at least ${GATE_DAYS} day streak to enter.`}
       >
         <p className="text-sm text-slate-400">
-          Compact contract verifies your badge without knowing who's asking. Claim badge
+          Compact contract verifies your badge without knowing who&apos;s asking. Claim badge
           first on the ZK Badge page.
         </p>
         <Link href="/badges" className="mt-3 inline-block text-sm text-emerald-400 hover:underline">
