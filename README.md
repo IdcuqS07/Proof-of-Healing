@@ -109,3 +109,17 @@ Complete guide: [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md).
 ## License
 
 Apache License 2.0 — see [`LICENSE`](LICENSE).
+
+## 📚 Resources and Tools
+
+### Resources
+- **Midnight Discord** — Main support channel for this Buildathon
+- **Midnight docs** — Official documentation
+- **GitHub Repo** — Project repository
+- **Sample Code** — By Haruki, a member of the Aliit Fellowship
+
+### Tools
+- **Midnight local dev** — A repo to spin up a local network for testing
+- **Effectstream** — A Web3 engine for building multi-chain dApps, infra and games
+- **Kuira SDK** — An SDK to build privacy-focused mobile applications
+- **Kapa and Midnight Expert MCP server** — Code smart contracts and dapps with AI
