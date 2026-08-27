@@ -15,8 +15,8 @@ export function Alerts() {
           className="mb-2 rounded-lg border border-sky-800 bg-sky-950/60 px-4 py-2 text-sm text-sky-200"
         >
           {busy === "register" || busy === "proof"
-            ? `Menjalankan Proof-of-Work di peramban… (${powAttempts.toLocaleString("id-ID")} percobaan)`
-            : "Memproses…"}
+            ? `Running Proof-of-Work in browser… (${powAttempts.toLocaleString("en-US")} attempts)`
+            : "Processing…"}
         </div>
       ) : null}
       {error ? (
