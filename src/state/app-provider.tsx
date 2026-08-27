@@ -14,11 +14,7 @@ import * as db from "@/lib/db";
 import { dailyCommitmentHash, randomSeedHex } from "@/lib/crypto";
 import { COOLDOWN_SECONDS, STAKE_AMOUNT, ProofOfHealingContract } from "@/lib/contract/simulator";
 import {
-  adjustMockWalletBalance,
-  clearMockWallet,
   connectWallet,
-  hasNativeWallet,
-  readMockWallet,
   type WalletState,
 } from "@/lib/wallet";
 import { clearPeerGroupMessages } from "@/lib/peer-group";
@@ -91,21 +87,65 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void (async () => {
-      // Reconnect the local development wallet so a reload does not silently
-      // drop the wallet that owns the micro-bond.
-      setWallet(readMockWallet());
-      const stored = await db.loadAccount();
-      if (stored) {
-        setAccount(stored);
-        await refresh(stored.seedHex);
+      try {
+        // Load stored account data if available
+        const stored = await db.loadAccount();
+        if (stored) {
+          setAccount(stored);
+          try {
+            await refresh(stored.seedHex);
+          } catch (refreshError) {
+            console.error("Error refreshing data:", refreshError);
+            // Continue anyway - wallet might not be available yet
+          }
+        }
+      } catch (error) {
+        console.error("Error during initialization:", error);
+      } finally {
+        setReady(true);
       }
-      setReady(true);
     })();
   }, [refresh]);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Math.floor(Date.now() / 1000)), 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  // Global error handler for unhandled errors
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      const errorMessage = event.message;
+      console.error("Unhandled error:", errorMessage, event);
+      
+      // Handle extension communication errors
+      if (errorMessage.includes("Could not establish connection") || 
+          errorMessage.includes("Receiving end does not exist") ||
+          errorMessage.includes("Extension communication error")) {
+        event.preventDefault();
+        setError("Wallet extension communication error. Please: 1) Check if wallet is installed and enabled 2) Refresh the page 3) Restart browser 4) Check browser extension permissions");
+      }
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      const errorMessage = event.reason instanceof Error ? event.reason.message : String(event.reason);
+      console.error("Unhandled promise rejection:", errorMessage, event);
+      
+      // Handle extension communication errors
+      if (errorMessage.includes("Could not establish connection") || 
+          errorMessage.includes("Receiving end does not exist") ||
+          errorMessage.includes("Extension communication error")) {
+        event.preventDefault();
+        setError("Wallet extension communication error. Please: 1) Check if wallet is installed and enabled 2) Refresh the page 3) Restart browser 4) Check browser extension permissions");
+      }
+    };
+
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
   }, []);
 
   const run = useCallback(
@@ -130,11 +170,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const connect = useCallback(
     () =>
       run("connect", async () => {
-        const connected = await connectWallet();
-        setWallet(connected);
-        return connected.native
-          ? `Terhubung ke Midnight Extension Wallet.`
-          : `Wallet pengembangan lokal aktif (ekstensi Midnight tidak terdeteksi).`;
+        try {
+          const connected = await connectWallet();
+          setWallet(connected);
+          return connected.native
+            ? `Terhubung ke Midnight Extension Wallet.`
+            : `Wallet pengembangan lokal aktif (ekstensi Midnight tidak terdeteksi).`;
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          // Handle extension communication errors gracefully
+          if (errorMessage.includes("Could not establish connection") || 
+              errorMessage.includes("Receiving end does not exist") ||
+              errorMessage.includes("Extension communication error")) {
+            setError("Wallet extension communication error. Please: 1) Check if wallet is installed and enabled 2) Refresh the page 3) Restart browser 4) Check browser extension permissions");
+            return "";
+          }
+          throw new Error(errorMessage);
+        }
       }),
     [run],
   );
@@ -155,7 +207,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         };
         await db.saveAccount(created);
         setAccount(created);
-        if (!wallet.native) setWallet(adjustMockWalletBalance(-STAKE_AMOUNT));
         await refresh(seedHex);
         return `Terdaftar anonim. Micro-bond terkunci, tx ${receipt.txId.slice(0, 12)}…`;
       }),
@@ -264,13 +315,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // credit the wallet again.
         let refundLanded = false;
         if (refundable > 0) {
-          if (wallet?.native) {
-            refundLanded = true;
-          } else {
-            const credited = adjustMockWalletBalance(refundable);
-            refundLanded = credited !== null;
-            if (credited) setWallet(credited);
-          }
+          refundLanded = true;
           if (refundLanded) {
             const refunded: AccountState = {
               ...account,
@@ -309,7 +354,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       run("wipe", async () => {
         await db.wipeLocalData();
         clearPeerGroupMessages();
-        clearMockWallet();
         setWallet(null);
         setAccount(null);
         setHabits([]);
@@ -336,7 +380,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     () => ({
       ready,
       wallet,
-      nativeWallet: hasNativeWallet(),
+      nativeWallet: wallet?.native ?? false,
       account,
       habits,
       entries,

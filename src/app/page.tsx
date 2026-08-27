@@ -84,7 +84,7 @@ export default function HomePage() {
         {wallet ? (
           <dl className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
             <div>
-              <dt className="text-slate-500">Alamat wallet</dt>
+              <dt className="text-slate-500">Alamat wallet (shielded)</dt>
               <dd>
                 <Mono>{wallet.address}</Mono>
               </dd>
@@ -97,6 +97,14 @@ export default function HomePage() {
               <dt className="text-slate-500">Saldo</dt>
               <dd className="text-slate-300">{(wallet.balance / 1_000_000).toFixed(3)} tDUST</dd>
             </div>
+            {wallet.unshieldedAddress ? (
+              <div>
+                <dt className="text-slate-500">Alamat untuk faucet (unshielded)</dt>
+                <dd>
+                  <Mono>{wallet.unshieldedAddress}</Mono>
+                </dd>
+              </div>
+            ) : null}
             {account ? (
               <div>
                 <dt className="text-slate-500">Komitmen anonim on-chain</dt>
