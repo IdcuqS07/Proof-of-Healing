@@ -1,56 +1,56 @@
 # Proof of Healing — ZK Mental Health & Habit Tracker
 
-Pelacak kesehatan mental dan kebiasaan berbasis privasi mutlak di atas **Midnight Network**.
-Jurnal harian tetap terenkripsi di perangkat pengguna (dual-ledger, sisi klien), sementara
-jaringan hanya menerima **Zero-Knowledge Proof** bahwa streak kebiasaan benar terjadi.
+Absolute privacy-based mental health and habit tracker on the **Midnight Network**.
+Daily journals remain encrypted on user devices (dual-ledger, client-side), while the
+network only receives **Zero-Knowledge Proof** that habit streaks actually occurred.
 
-- Target hackathon: **Midnight Buildathon | AKINDO** (topic GitHub: `midnightntwrk`)
-- Lisensi: **Apache License 2.0**
+- Hackathon target: **Midnight Buildathon | AKINDO** (GitHub topic: `midnightntwrk`)
+- License: **Apache License 2.0**
 
-## Apa yang dilihat blockchain (dan apa yang tidak)
+## What the blockchain sees (and what it doesn't)
 
-| Terlihat di ledger | Tidak pernah meninggalkan perangkat |
+| Visible on ledger | Never leaves device |
 | --- | --- |
-| `commitment = persistentHash(secretSeed)` | seed rahasia pengguna |
-| block time bukti harian terakhir | tanggal & isi jurnal, mood |
-| status micro-bond (terkunci/dikembalikan) | nama & kategori kebiasaan |
-| badge milestone (7/14/30) + counter agregat | riwayat medis atau identitas apa pun |
+| `commitment = persistentHash(secretSeed)` | user secret seed |
+| last daily proof block time | dates & journal contents, mood |
+| micro-bond status (locked/refunded) | habit names & categories |
+| milestone badges (7/14/30) + aggregate counter | any medical history or identity |
 
-## Arsitektur
+## Architecture
 
 ```
 CLIENT (browser)                                 ON-CHAIN (Midnight)
-[Jurnal & habit] → IndexedDB (AES-256-GCM)
-        ↓ hash komitmen harian
+[Journal & habits] → IndexedDB (AES-256-GCM)
+        ↓ daily commitment hash
 [Proof-of-Work 3–5 s] → [ZK prover]  ──proof──▶  ProofOfHealingNative.compact
-                                                 · cek micro-bond (stake)
-                                                 · cek cooldown 18 jam
-                                                 · cek streak ≥ target
-                                                 · terbitkan badge anonim
+                                                 · check micro-bond (stake)
+                                                 · check 18-hour cooldown
+                                                 · check streak ≥ target
+                                                 · issue anonymous badge
 ```
 
-| Layer | Implementasi |
+| Layer | Implementation |
 | --- | --- |
 | Smart contract | `contracts/src/ProofOfHealingNative.compact` |
-| Mirror kontrak untuk dApp & test | `src/lib/contract/simulator.ts` |
+| Contract mirror for dApp & testing | `src/lib/contract/simulator.ts` |
 | Frontend | Next.js 14 (App Router) + TypeScript + Tailwind |
-| Penyimpanan lokal | IndexedDB (`idb`), AES-256-GCM + PBKDF2 (`src/lib/crypto.ts`) |
-| Anti-bot klien | `src/lib/pow.ts` (SHA-256 PoW, difficulty 5 nibble) |
-| Wallet | `src/lib/wallet.ts` — Midnight Extension Wallet, fallback wallet dev lokal |
-| Prover | `src/lib/zk.ts` — proof server Midnight bila tersedia, jika tidak proof lokal |
+| Local storage | IndexedDB (`idb`), AES-256-GCM + PBKDF2 (`src/lib/crypto.ts`) |
+| Client anti-bot | `src/lib/pow.ts` (SHA-256 PoW, difficulty 5 nibble) |
+| Wallet | `src/lib/wallet.ts` — Midnight Extension Wallet, fallback local dev wallet |
+| Prover | `src/lib/zk.ts` — Midnight proof server if available, otherwise local proof |
 
-## Menjalankan aplikasi
+## Running the application
 
 ```bash
 npm install
 npm run dev          # http://localhost:3000
 ```
 
-Tanpa Midnight Extension Wallet, aplikasi otomatis memakai wallet pengembangan lokal dan
-mengeksekusi kontrak melalui simulator, sehingga seluruh alur (register → bukti harian →
-badge → peer group) tetap dapat dicoba end-to-end.
+Without Midnight Extension Wallet, the app automatically uses local development wallet and
+executes contracts through simulator, so entire flow (register → daily proof →
+badge → peer group) can still be tested end-to-end.
 
-### Menghubungkan ke node & proof server Midnight lokal
+### Connecting to local Midnight node & proof server
 
 ```bash
 # Midnight local dev container (proof server + node + indexer)
@@ -59,53 +59,53 @@ export NEXT_PUBLIC_MIDNIGHT_PROOF_SERVER=http://localhost:6300
 npm run dev
 ```
 
-Ketika `NEXT_PUBLIC_MIDNIGHT_PROOF_SERVER` diset, `src/lib/zk.ts` mengirim witness ke proof
-server alih-alih membuat bukti lokal. Isi `docker/midnight-devnet.yml` mengikuti image resmi
-Midnight; sesuaikan tag image dengan rilis testnet yang Anda pakai.
+When `NEXT_PUBLIC_MIDNIGHT_PROOF_SERVER` is set, `src/lib/zk.ts` sends witness to proof
+server instead of creating local proof. `docker/midnight-devnet.yml` content follows official
+Midnight images; adjust image tag to match testnet release you're using.
 
-### Mengompilasi smart contract
+### Compiling smart contract
 
 ```bash
-# compactc dari Midnight Compact developer tools
+# compactc from Midnight Compact developer tools
 compactc contracts/src/ProofOfHealingNative.compact contracts/build
 ```
 
-Catatan: `compactc` tidak tersedia di lingkungan CI publik, sehingga kontrak dikompilasi
-secara lokal. Semua assertion kontrak dicerminkan satu-per-satu di
-`src/lib/contract/simulator.ts` dan diuji oleh test suite.
+Note: `compactc` is not available in public CI environment, so contract is compiled
+locally. All contract assertions are mirrored one-to-one in
+`src/lib/contract/simulator.ts` and tested by test suite.
 
-## Pengujian
+## Testing
 
 ```bash
-npm test          # 24 test: assertion kontrak, cooldown 18 jam, PoW, enkripsi, streak
+npm test          # 24 tests: contract assertions, 18-hour cooldown, PoW, encryption, streak
 npm run typecheck
 npm run lint
 ```
 
-Cakupan test:
+Test coverage:
 
-- `tests/contract.test.ts` — micro-bond, penolakan Sybil, cooldown 18 jam (termasuk batas
-  tepat 64.800 detik), streak di bawah threshold, klaim ganda, refund bond.
-- `tests/privacy.test.ts` — round-trip AES-256-GCM, kegagalan dekripsi lintas seed,
-  unlinkability hash komitmen, verifikasi PoW, perhitungan streak.
+- `tests/contract.test.ts` — micro-bond, Sybil rejection, 18-hour cooldown (including exact
+  64,800 second boundary), streak below threshold, double claim, bond refund.
+- `tests/privacy.test.ts` — AES-256-GCM round-trip, cross-seed decryption failure,
+  commitment hash unlinkability, PoW verification, streak calculation.
 
-## Alur pengguna (ringkas dari User Guide)
+## User flow (summary from User Guide)
 
-1. **Connect Wallet → Register & Stake Deposit** — micro-bond dikunci sebagai bukti kemanusiaan.
-2. **Catat kebiasaan harian** di Dashboard — tersimpan terenkripsi di perangkat.
-3. **Submit Daily Proof** — PoW di peramban, lalu kontrak memverifikasi jeda ≥ 18 jam.
-4. **Generate ZK Proof** di halaman ZK Badge — badge anonim terbit, deposit dikembalikan.
-5. **Anonymous Peer Group** — akses dibuka oleh ZK Badge, tanpa identitas apa pun.
+1. **Connect Wallet → Register & Stake Deposit** — micro-bond locked as proof of humanity.
+2. **Track daily habits** in Dashboard — stored encrypted on device.
+3. **Submit Daily Proof** — PoW in browser, then contract verifies gap ≥ 18 hours.
+4. **Generate ZK Proof** on ZK Badge page — anonymous badge issued, deposit refunded.
+5. **Anonymous Peer Group** — access opened by ZK Badge, without any identity.
 
-Panduan lengkap: [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md).
+Complete guide: [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md).
 
 ## Roadmap
 
-- **Wave 1** — kontrak Compact (stake + cooldown), node lokal, wireframe UI. ✔
-- **Wave 2** — integrasi SDK Midnight, PoW peramban, generator ZK proof streak. ✔ (prover
-  nyata aktif saat proof server tersedia)
-- **Wave 3** — penyempurnaan UI/UX, cakupan test, video demo, grup anonim terdesentralisasi.
+- **Wave 1** — Compact contract (stake + cooldown), local node, UI wireframe. ✔
+- **Wave 2** — Midnight SDK integration, browser PoW, streak ZK proof generator. ✔ (real
+  prover active when proof server available)
+- **Wave 3** — UI/UX refinement, test coverage, demo video, decentralized anonymous group.
 
-## Lisensi
+## License
 
-Apache License 2.0 — lihat [`LICENSE`](LICENSE).
+Apache License 2.0 — see [`LICENSE`](LICENSE).

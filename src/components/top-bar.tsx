@@ -6,7 +6,7 @@ import { useApp } from "@/state/app-provider";
 import { Badge, Button } from "./ui";
 
 const LINKS = [
-  { href: "/", label: "Beranda" },
+  { href: "/", label: "Home" },
   { href: "/dashboard", label: "Dashboard" },
   { href: "/badges", label: "ZK Badge" },
   { href: "/group", label: "Peer Group" },
@@ -41,13 +41,13 @@ export function TopBar() {
         {wallet ? (
           <div className="flex items-center gap-2 text-xs text-slate-400">
             <Badge tone={account ? "emerald" : "amber"}>
-              {account ? "Terdaftar" : "Belum terdaftar"}
+              {account ? "Registered" : "Not registered"}
             </Badge>
             <span className="font-mono">{`${wallet.address.slice(0, 14)}…`}</span>
           </div>
         ) : (
           <Button onClick={() => void connect()} disabled={busy === "connect"}>
-            {busy === "connect" ? "Menghubungkan…" : "Connect Wallet"}
+            {busy === "connect" ? "Connecting…" : "Connect Wallet"}
           </Button>
         )}
       </div>

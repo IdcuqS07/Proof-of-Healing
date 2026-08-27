@@ -27,13 +27,13 @@ export default function GroupPage() {
     setMessages(readPeerGroupMessages());
   }, [account, badges, checkPeerAccess]);
 
-  if (!ready || allowed === null) return <p className="text-slate-500">Memverifikasi ZK Badge…</p>;
+  if (!ready || allowed === null) return <p className="text-slate-500">Verifying ZK Badge…</p>;
 
   if (!account) {
     return (
-      <Card title="Belum terdaftar">
+      <Card title="Not registered">
         <Link href="/" className="text-sm text-emerald-400 hover:underline">
-          ← Daftar dulu di beranda
+          ← Register first on homepage
         </Link>
       </Card>
     );
@@ -42,15 +42,15 @@ export default function GroupPage() {
   if (!allowed) {
     return (
       <Card
-        title="Akses grup terkunci"
-        subtitle={`Butuh ZK Badge minimal ${GATE_DAYS} hari streak untuk masuk.`}
+        title="Group access locked"
+        subtitle={`Need ZK Badge with at least ${GATE_DAYS} day streak to enter.`}
       >
         <p className="text-sm text-slate-400">
-          Kontrak Compact memverifikasi badge Anda tanpa mengetahui siapa yang bertanya. Klaim badge
-          terlebih dahulu di halaman ZK Badge.
+          Compact contract verifies your badge without knowing who's asking. Claim badge
+          first on the ZK Badge page.
         </p>
         <Link href="/badges" className="mt-3 inline-block text-sm text-emerald-400 hover:underline">
-          Buka halaman ZK Badge →
+          Open ZK Badge page →
         </Link>
       </Card>
     );
@@ -62,11 +62,11 @@ export default function GroupPage() {
     <div className="space-y-6">
       <Card
         title="Exclusive Anonymous Support Group"
-        subtitle="Anda masuk sebagai identitas turunan dari komitmen ZK, bukan nama atau wallet Anda."
+        subtitle="You enter as derived identity from ZK commitment, not your name or wallet."
       >
         <div className="flex items-center gap-2">
-          <Badge tone="emerald">Terverifikasi ≥ {GATE_DAYS} hari</Badge>
-          <span className="text-sm text-slate-400">Alias Anda: {alias}</span>
+          <Badge tone="emerald">Verified ≥ {GATE_DAYS} days</Badge>
+          <span className="text-sm text-slate-400">Your alias: {alias}</span>
         </div>
 
         <form
@@ -85,14 +85,14 @@ export default function GroupPage() {
             rows={3}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
-            placeholder="Bagikan motivasi tanpa menyebut identitas Anda."
+            placeholder="Share motivation without revealing your identity."
             className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
           />
-          <Button type="submit">Kirim anonim</Button>
+          <Button type="submit">Send anonymously</Button>
         </form>
       </Card>
 
-      <Card title="Percakapan">
+      <Card title="Conversation">
         <ul className="space-y-3">
           {[...messages].reverse().map((message) => (
             <li
@@ -101,15 +101,15 @@ export default function GroupPage() {
             >
               <div className="flex items-center gap-2 text-xs text-slate-500">
                 <span className="font-mono text-slate-400">{message.alias}</span>
-                <span>{new Date(message.at).toLocaleString("id-ID")}</span>
+                <span>{new Date(message.at).toLocaleString("en-US")}</span>
               </div>
               <p className="mt-1 text-sm text-slate-200">{message.body}</p>
             </li>
           ))}
         </ul>
         <p className="mt-4 text-xs text-slate-600">
-          Feed grup disimulasikan secara lokal pada Wave 2; lapisan pesan terdesentralisasi masuk
-          roadmap Wave 3.
+          Group feed is simulated locally in Wave 2; decentralized messaging layer enters
+          Wave 3 roadmap.
         </p>
       </Card>
     </div>

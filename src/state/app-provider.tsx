@@ -174,8 +174,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const connected = await connectWallet();
           setWallet(connected);
           return connected.native
-            ? `Terhubung ke Midnight Extension Wallet.`
-            : `Wallet pengembangan lokal aktif (ekstensi Midnight tidak terdeteksi).`;
+            ? `Connected to Midnight Extension Wallet.`
+            : `Local development wallet active (Midnight extension not detected).`;
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
           // Handle extension communication errors gracefully
@@ -194,8 +194,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const register = useCallback(
     () =>
       run("register", async () => {
-        if (!wallet) throw new Error("hubungkan wallet terlebih dahulu");
-        if (wallet.balance < STAKE_AMOUNT) throw new Error("saldo testnet tidak cukup untuk deposit");
+        if (!wallet) throw new Error("connect wallet first");
+        if (wallet.balance < STAKE_AMOUNT) throw new Error("insufficient testnet balance for deposit");
         const seedHex = randomSeedHex();
         const receipt = await chain.registerAndStake(seedHex, STAKE_AMOUNT, setPowAttempts);
         const created: AccountState = {
@@ -208,7 +208,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         await db.saveAccount(created);
         setAccount(created);
         await refresh(seedHex);
-        return `Terdaftar anonim. Micro-bond terkunci, tx ${receipt.txId.slice(0, 12)}…`;
+        return `Registered anonymously. Micro-bond locked, tx ${receipt.txId.slice(0, 12)}…`;
       }),
     [refresh, run, wallet],
   );
@@ -216,16 +216,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addHabit = useCallback(
     (input: { name: string; category: string; target: string }) =>
       run("habit", async () => {
-        if (!account) throw new Error("belum terdaftar");
+        if (!account) throw new Error("not registered");
         const habit: Habit = {
           id: randomSeedHex().slice(0, 16),
           name: input.name.trim(),
-          category: input.category.trim() || "Umum",
-          target: input.target.trim() || "1x sehari",
+          category: input.category.trim() || "General",
+          target: input.target.trim() || "1x daily",
           createdAt: new Date().toISOString(),
           archived: false,
         };
-        if (!habit.name) throw new Error("nama kebiasaan wajib diisi");
+        if (!habit.name) throw new Error("habit name is required");
         await db.saveHabit(account.seedHex, habit);
         await refresh(account.seedHex);
       }),
@@ -235,7 +235,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const removeHabit = useCallback(
     (id: string) =>
       run("habit", async () => {
-        if (!account) throw new Error("belum terdaftar");
+        if (!account) throw new Error("not registered");
         await db.deleteHabit(id);
         await refresh(account.seedHex);
       }),
@@ -245,7 +245,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const saveToday = useCallback(
     (input: { completedHabitIds: string[]; mood: number; journal: string }) =>
       run("journal", async () => {
-        if (!account) throw new Error("belum terdaftar");
+        if (!account) throw new Error("not registered");
         const date = todayISO();
         const entry: JournalEntry = {
           date,
@@ -262,7 +262,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         };
         await db.saveEntry(account.seedHex, entry);
         await refresh(account.seedHex);
-        return "Catatan harian tersimpan terenkripsi di perangkat ini.";
+        return "Daily note saved encrypted on this device.";
       }),
     [account, refresh, run],
   );
@@ -270,11 +270,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const submitDailyProof = useCallback(
     () =>
       run("proof", async () => {
-        if (!account) throw new Error("belum terdaftar");
+        if (!account) throw new Error("not registered");
         const entry = await db.getEntry(account.seedHex, todayISO());
-        if (!entry) throw new Error("catat kebiasaan hari ini sebelum mengirim bukti");
+        if (!entry) throw new Error("log today's habits before submitting proof");
         if (entry.completedHabitIds.length === 0) {
-          throw new Error("centang minimal satu kebiasaan hari ini");
+          throw new Error("check at least one habit today");
         }
         const receipt = await chain.submitDailyProof(
           account.seedHex,
@@ -290,7 +290,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           txId: receipt.txId,
         });
         await refresh(account.seedHex);
-        return `Bukti harian diterima kontrak, tx ${receipt.txId.slice(0, 12)}…`;
+        return `Daily proof accepted by contract, tx ${receipt.txId.slice(0, 12)}…`;
       }),
     [account, refresh, run],
   );
@@ -301,7 +301,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const claimMilestone = useCallback(
     (requiredDays: number) =>
       run("milestone", async () => {
-        if (!account) throw new Error("belum terdaftar");
+        if (!account) throw new Error("not registered");
         const refundable = account.stakedAmount;
         const receipt = await chain.claimMilestone(account.seedHex, streak, requiredDays);
         await db.saveBadge({
@@ -328,11 +328,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
         await refresh(account.seedHex);
         if (refundable > 0 && !refundLanded) {
-          return `ZK Badge ${requiredDays} hari diterbitkan. Hubungkan wallet untuk menarik deposit.`;
+          return `ZK Badge ${requiredDays} days issued. Connect wallet to withdraw deposit.`;
         }
         return refundable > 0
-          ? `ZK Badge ${requiredDays} hari diterbitkan, deposit dikembalikan.`
-          : `ZK Badge ${requiredDays} hari diterbitkan.`;
+          ? `ZK Badge ${requiredDays} days issued, deposit refunded.`
+          : `ZK Badge ${requiredDays} days issued.`;
       }),
     [account, refresh, run, streak],
   );
@@ -361,7 +361,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setProofs([]);
         setBadges([]);
         setLastProofAt(null);
-        return "Semua data lokal dihapus dari perangkat ini.";
+        return "All local data removed from this device.";
       }),
     [run],
   );

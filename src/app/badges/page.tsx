@@ -8,13 +8,13 @@ import { MILESTONES } from "@/lib/types";
 export default function BadgesPage() {
   const { ready, account, badges, streak, proofs, busy, claimMilestone } = useApp();
 
-  if (!ready) return <p className="text-slate-500">Memuat…</p>;
+  if (!ready) return <p className="text-slate-500">Loading…</p>;
 
   if (!account) {
     return (
-      <Card title="Belum terdaftar">
+      <Card title="Not registered">
         <Link href="/" className="text-sm text-emerald-400 hover:underline">
-          ← Daftar dulu di beranda
+          ← Register first on homepage
         </Link>
       </Card>
     );
@@ -23,18 +23,18 @@ export default function BadgesPage() {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-3">
-        <Stat label="Streak saat ini" value={`${streak} hari`} />
-        <Stat label="Bukti harian on-chain" value={proofs.length} />
+        <Stat label="Current streak" value={`${streak} days`} />
+        <Stat label="Daily on-chain proofs" value={proofs.length} />
         <Stat
           label="Micro-bond"
-          value={account.stakedAmount > 0 ? "Terkunci" : "Dikembalikan"}
+          value={account.stakedAmount > 0 ? "Locked" : "Refunded"}
           hint={account.refundedAt ? `Refund ${account.refundedAt.slice(0, 10)}` : undefined}
         />
       </div>
 
       <Card
         title="Milestone ZK Badge"
-        subtitle="Kontrak hanya memverifikasi streak ≥ target: tanggal, nama kebiasaan, dan isi jurnal tetap rahasia."
+        subtitle="Contract only verifies streak ≥ target: dates, habit names, and journal contents remain secret."
       >
         <ul className="space-y-3">
           {MILESTONES.map((milestone) => {
@@ -46,14 +46,14 @@ export default function BadgesPage() {
                 className="rounded-xl border border-slate-800 bg-slate-950/50 p-4"
               >
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="text-lg font-semibold text-slate-100">{milestone} Hari Streak</span>
-                  {owned ? <Badge tone="emerald">Badge dimiliki</Badge> : null}
-                  {!owned && eligible ? <Badge tone="amber">Siap diklaim</Badge> : null}
+                  <span className="text-lg font-semibold text-slate-100">{milestone} Day Streak</span>
+                  {owned ? <Badge tone="emerald">Badge owned</Badge> : null}
+                  {!owned && eligible ? <Badge tone="amber">Ready to claim</Badge> : null}
                   {!owned && !eligible ? (
                     <Badge>
                       {streak < milestone
-                        ? `${milestone - streak} hari lagi`
-                        : `butuh ${milestone - proofs.length} bukti on-chain lagi`}
+                        ? `${milestone - streak} days remaining`
+                        : `need ${milestone - proofs.length} more on-chain proofs`}
                     </Badge>
                   ) : null}
                   <Button
@@ -63,15 +63,15 @@ export default function BadgesPage() {
                     disabled={!!owned || !eligible || busy === "milestone"}
                   >
                     {owned
-                      ? "Sudah diklaim"
+                      ? "Already claimed"
                       : busy === "milestone"
-                        ? "Membuat ZK Proof…"
+                        ? "Creating ZK Proof…"
                         : "Generate ZK Proof"}
                   </Button>
                 </div>
                 {owned ? (
                   <p className="mt-2 text-xs text-slate-500">
-                    Diklaim {owned.claimedAt.slice(0, 10)} · proof <Mono>{owned.proofId}</Mono>
+                    Claimed {owned.claimedAt.slice(0, 10)} · proof <Mono>{owned.proofId}</Mono>
                   </p>
                 ) : null}
               </li>

@@ -1,83 +1,83 @@
 # 📖 User Guide: Proof of Healing
 
-Selamat datang di **Proof of Healing**, aplikasi pelacak kesehatan mental dan kebiasaan berbasis
-privasi mutlak. Aplikasi memanfaatkan Zero-Knowledge Proofs di jaringan Midnight sehingga
-perkembangan Anda dapat dibuktikan tanpa satu pun data pribadi diunggah ke internet.
+Welcome to **Proof of Healing**, an absolute privacy-based mental health and habit tracker.
+The application uses Zero-Knowledge Proofs on the Midnight network so your progress can be
+proven without any personal data uploaded to the internet.
 
-## 🛠️ Persyaratan & persiapan awal
+## 🛠️ Requirements & initial preparation
 
-- **Peramban**: Google Chrome / Brave / Firefox versi terbaru.
-- **Midnight Extension Wallet** terpasang di peramban. Jika belum ada, aplikasi otomatis
-  memakai wallet pengembangan lokal supaya seluruh alur tetap bisa dicoba.
-- **Token testnet (tDUST)** untuk deposit jaminan dan biaya jaringan, diperoleh gratis dari
+- **Browser**: Google Chrome / Brave / Firefox latest version.
+- **Midnight Extension Wallet** installed in browser. If not available, app automatically
+  uses local development wallet so entire flow can still be tested.
+- **Testnet tokens (tDUST)** for security deposit and network fees, obtained free from
   Midnight Faucet.
 
-## 🚀 Langkah demi langkah
+## 🚀 Step by step
 
-### Langkah 1 — Hubungkan wallet & daftar anonim
+### Step 1 — Connect wallet & register anonymously
 
-1. Buka dApp Proof of Healing.
-2. Klik **Connect Wallet** di kanan atas dan izinkan koneksi.
-3. Klik **Register & Stake Deposit**.
-   - Peramban menjalankan Proof-of-Work singkat, lalu kontrak mengunci **micro-bond 1 tDUST**
-     sebagai jaminan bahwa Anda manusia asli.
-   - Yang tercatat on-chain hanyalah `commitment = hash(seed rahasia Anda)`.
-   - Deposit dikembalikan penuh setelah milestone streak tercapai.
+1. Open Proof of Healing dApp.
+2. Click **Connect Wallet** in top right and allow connection.
+3. Click **Register & Stake Deposit**.
+   - Browser runs short Proof-of-Work, then contract locks **1 tDUST micro-bond**
+     as proof you're a real human.
+   - Only recorded on-chain is `commitment = hash(your secret seed)`.
+   - Deposit is fully refunded after streak milestone is achieved.
 
-### Langkah 2 — Catat kebiasaan harian (client-side)
+### Step 2 — Track daily habits (client-side)
 
-1. Di **Dashboard**, tambahkan kebiasaan yang ingin dilacak (misal *Meditasi 15 menit*,
-   *Jurnal Emosi*, *Kepatuhan Terapi*).
-2. Setiap hari, centang kebiasaan yang selesai, atur mood, dan tulis jurnal bila mau.
-3. Klik **Simpan catatan lokal**.
+1. In **Dashboard**, add habits you want to track (e.g. *Meditation 15 minutes*,
+   *Emotion Journal*, *Therapy Compliance*).
+2. Each day, check completed habits, set mood, and write journal if desired.
+3. Click **Save local note**.
 
-> **Jaminan privasi**: seluruh catatan disimpan di IndexedDB perangkat Anda, terenkripsi
-> AES-256-GCM dengan kunci turunan dari seed lokal Anda. Tidak ada server, pengembang, maupun
-> pihak lain yang dapat membacanya.
+> **Privacy guarantee**: all notes stored in your device's IndexedDB, encrypted
+> AES-256-GCM with key derived from your local seed. No server, developer, or
+> other party can read them.
 
-### Langkah 3 — Kirim bukti aktivitas harian
+### Step 3 — Submit daily activity proof
 
-1. Klik **Submit Daily Proof**.
-2. Peramban menjalankan Proof-of-Work (± 3–5 detik) untuk membatasi eksekusi masal oleh skrip.
-3. Kontrak Compact memverifikasi **jeda minimal 18 jam** antar entri; bila terlalu cepat,
-   transaksi ditolak dengan pesan *"interaksi terlalu cepat (terdeteksi bot)"*.
-4. Konfirmasi transaksi di wallet Anda. Yang dikirim hanyalah hash komitmen harian.
+1. Click **Submit Daily Proof**.
+2. Browser runs Proof-of-Work (± 3–5 seconds) to limit mass execution by scripts.
+3. Compact contract verifies **minimum 18-hour gap** between entries; if too fast,
+   transaction rejected with message *"interaction too fast (bot detected)"*.
+4. Confirm transaction in your wallet. Only daily commitment hash is sent.
 
-### Langkah 4 — Klaim milestone & ZK Badge
+### Step 4 — Claim milestone & ZK Badge
 
-1. Setelah streak mencapai target (7, 14, atau 30 hari), buka halaman **ZK Badge**.
-2. Tombol **Generate ZK Proof** aktif untuk milestone yang memenuhi syarat.
-3. Kontrak memverifikasi `streak ≥ target` tanpa mengetahui tanggal, nama kebiasaan, atau isi
-   catatan Anda.
-4. Badge anonim diterbitkan dan **micro-bond dikembalikan** ke wallet Anda.
+1. After streak reaches target (7, 14, or 30 days), open **ZK Badge** page.
+2. **Generate ZK Proof** button is active for qualifying milestones.
+3. Contract verifies `streak ≥ target` without knowing dates, habit names, or your
+   journal contents.
+4. Anonymous badge is issued and **micro-bond is refunded** to your wallet.
 
-### Langkah 5 — Bergabung ke Anonymous Peer Group
+### Step 5 — Join Anonymous Peer Group
 
-1. Buka halaman **Peer Group**. Akses dibuka oleh ZK Badge minimal 7 hari.
-2. Anda muncul dengan alias turunan komitmen ZK (misal `healer-3f8c`) — tanpa nama, foto, atau
-   identitas sosial.
+1. Open **Peer Group** page. Access opened by ZK Badge minimum 7 days.
+2. You appear with alias derived from ZK commitment (e.g. `healer-3f8c`) — without name, photo, or
+   social identity.
 
 ## ❓ FAQ
 
-**Apakah jurnal saya bisa dilihat publik di blockchain?**
-Tidak. Jurnal terenkripsi di perangkat Anda; hanya bukti matematika (benar/salah) yang dikirim.
+**Can my journal be seen publicly on blockchain?**
+No. Journal encrypted on your device; only mathematical proof (true/false) is sent.
 
-**Mengapa harus mengunci token jaminan?**
-Micro-bonding adalah mekanisme anti-Sybil native kontrak Compact. Token dikembalikan saat
-milestone tercapai.
+**Why must I lock security tokens?**
+Micro-bonding is Compact contract's native anti-Sybil mechanism. Tokens refunded when
+milestone achieved.
 
-**Bagaimana jika saya lupa mencatat beberapa hari?**
-Hitungan streak menyesuaikan diri dan Anda dapat memulai streak baru kapan saja; data historis
-lokal tidak hilang.
+**What if I forget to log some days?**
+Streak count adjusts and you can start new streak anytime; local historical data
+not lost.
 
-**Apakah data saya hilang jika ganti perangkat atau membersihkan peramban?**
-Ya. Data hanya ada di perangkat Anda — itulah harga dari privasi mutlak. Backup terenkripsi
-masuk roadmap Wave 3.
+**Do I lose data if I change device or clear browser?**
+Yes. Data only exists on your device — that's the price of absolute privacy. Encrypted
+backup enters Wave 3 roadmap.
 
-## 🛠️ Masalah & bantuan
+## 🛠️ Issues & help
 
-- Pastikan wallet Midnight terhubung ke **Testnet**.
-- Pastikan saldo tDUST cukup untuk gas dan deposit.
-- Bila tombol **Submit Daily Proof** tidak aktif, periksa sisa waktu cooldown 18 jam yang
-  ditampilkan di Dashboard.
-- Laporkan kendala sebagai issue di repositori GitHub proyek (topic `midnightntwrk`).
+- Ensure Midnight wallet connected to **Testnet**.
+- Ensure sufficient tDUST balance for gas and deposit.
+- If **Submit Daily Proof** button inactive, check remaining 18-hour cooldown time
+  displayed in Dashboard.
+- Report issues as GitHub repository issue (topic `midnightntwrk`).
