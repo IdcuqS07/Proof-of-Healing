@@ -38,28 +38,31 @@ declare global {
 
 function detectInjectedWallet(): MidnightWalletApi | null {
   if (typeof window === "undefined") return null;
-  
+
   try {
     // Only access window.midnight when explicitly requested to avoid triggering extension communication
     const midnight = (window as unknown as Record<string, unknown>).midnight as { mnLace?: MidnightWalletApi } & Record<string, MidnightWalletApi | undefined>;
     if (!midnight) return null;
-    
-    // Check for 1AM wallet (official Midnight wallet)
-    if (midnight['1am']) {
-      return midnight['1am'] as MidnightWalletApi;
-    }
-    
-    // Check for Lace Midnight wallet (mnLace)
+
+    // Prioritize Lace Midnight wallet (mnLace) - official wallet from IOG
     if (midnight.mnLace) {
+      console.log("Detected Lace Midnight wallet (mnLace)");
       return midnight.mnLace as MidnightWalletApi;
     }
-    
+
+    // Check for 1AM wallet (alternative Midnight wallet)
+    if (midnight['1am']) {
+      console.log("Detected 1AM wallet");
+      return midnight['1am'] as MidnightWalletApi;
+    }
+
     // Check for any other Midnight wallet
     const wallet = Object.values(midnight).find(Boolean) ?? null;
     if (wallet) {
+      console.log("Detected other Midnight wallet");
       return wallet as MidnightWalletApi;
     }
-    
+
     return null;
   } catch (error) {
     console.error("Error detecting wallet:", error);
@@ -73,7 +76,7 @@ function detectInjectedWallet(): MidnightWalletApi | null {
 export async function connectWallet(): Promise<WalletState> {
   const injected = detectInjectedWallet();
   if (!injected) {
-    throw new Error("No Midnight wallet extension detected. Please install and enable 1AM wallet or Lace Midnight wallet extension.");
+    throw new Error("No Midnight wallet extension detected. Please install and enable Lace Wallet extension from https://www.lace.io/");
   }
 
   try {

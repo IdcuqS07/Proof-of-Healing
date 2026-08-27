@@ -36,17 +36,25 @@ CLIENT (browser)                                 ON-CHAIN (Midnight)
 | Frontend | Next.js 14 (App Router) + TypeScript + Tailwind |
 | Local storage | IndexedDB (`idb`), AES-256-GCM + PBKDF2 (`src/lib/crypto.ts`) |
 | Client anti-bot | `src/lib/pow.ts` (SHA-256 PoW, difficulty 5 nibble) |
-| Wallet | `src/lib/wallet.ts` — Midnight Extension Wallet, fallback local dev wallet |
+| Wallet | `src/lib/wallet.ts` — Lace Wallet (official Midnight wallet from IOG), fallback local dev wallet |
 | Prover | `src/lib/zk.ts` — Midnight proof server if available, otherwise local proof |
 
 ## Running the application
+
+### 🛠️ Requirements & initial preparation
+
+- **Browser**: Google Chrome / Brave / Firefox latest version.
+- **Lace Wallet** installed in browser from https://www.lace.io/. Lace is the official wallet from Input Output Global (IOG), the team behind Cardano and Midnight. If not available, app automatically
+  uses local development wallet so entire flow can still be tested.
+- **Testnet tokens (tDUST)** for security deposit and network fees, obtained free from
+  Midnight Faucet.
 
 ```bash
 npm install
 npm run dev          # http://localhost:3000
 ```
 
-Without Midnight Extension Wallet, the app automatically uses local development wallet and
+Without Lace Wallet, the app automatically uses local development wallet and
 executes contracts through simulator, so entire flow (register → daily proof →
 badge → peer group) can still be tested end-to-end.
 

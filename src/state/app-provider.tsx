@@ -174,15 +174,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const connected = await connectWallet();
           setWallet(connected);
           return connected.native
-            ? `Connected to Midnight Extension Wallet.`
-            : `Local development wallet active (Midnight extension not detected).`;
+            ? `Connected to Lace Wallet.`
+            : `Local development wallet active (Lace Wallet not detected).`;
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
           // Handle extension communication errors gracefully
           if (errorMessage.includes("Could not establish connection") || 
               errorMessage.includes("Receiving end does not exist") ||
               errorMessage.includes("Extension communication error")) {
-            setError("Wallet extension communication error. Please: 1) Check if wallet is installed and enabled 2) Refresh the page 3) Restart browser 4) Check browser extension permissions");
+            setError("Lace Wallet communication error. Please: 1) Check if Lace Wallet is installed and enabled from https://www.lace.io/ 2) Refresh the page 3) Restart browser 4) Check browser extension permissions");
             return "";
           }
           throw new Error(errorMessage);

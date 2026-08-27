@@ -7,7 +7,7 @@ proven without any personal data uploaded to the internet.
 ## 🛠️ Requirements & initial preparation
 
 - **Browser**: Google Chrome / Brave / Firefox latest version.
-- **Midnight Extension Wallet** installed in browser. If not available, app automatically
+- **Lace Wallet** installed in browser from https://www.lace.io/. Lace is the official wallet from Input Output Global (IOG), the team behind Cardano and Midnight. If not available, app automatically
   uses local development wallet so entire flow can still be tested.
 - **Testnet tokens (tDUST)** for security deposit and network fees, obtained free from
   Midnight Faucet.

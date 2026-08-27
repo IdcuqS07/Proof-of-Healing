@@ -115,7 +115,7 @@ export default function HomePage() {
           </dl>
         ) : (
           <p className="mt-4 text-sm text-slate-500">
-            Don&apos;t have Midnight Extension Wallet? App automatically uses local development wallet
+            Don&apos;t have Lace Wallet? App automatically uses local development wallet
             so entire flow can still be tested.
           </p>
         )}
