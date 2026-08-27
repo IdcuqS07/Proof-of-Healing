@@ -122,7 +122,11 @@ export async function connectWallet(): Promise<WalletState> {
       console.log("Wallet addresses from API:", addresses);
     } catch (addressError) {
       console.error("getShieldedAddresses() failed:", addressError);
-      throw new Error(`Failed to get wallet address: ${addressError instanceof Error ? addressError.message : String(addressError)}`);
+      const addressErrorMessage = addressError instanceof Error ? addressError.message : String(addressError);
+      if (addressErrorMessage.includes("syncing") || addressErrorMessage.includes("sync")) {
+        throw new Error("Wallet is syncing. Please open your wallet extension and wait for sync to complete before connecting.");
+      }
+      throw new Error(`Failed to get wallet address: ${addressErrorMessage}`);
     }
     const address = addresses.shieldedAddress;
     
