@@ -82,6 +82,25 @@ Note: `compactc` is not available in public CI environment, so contract is compi
 locally. All contract assertions are mirrored one-to-one in
 `src/lib/contract/simulator.ts` and tested by test suite.
 
+### Deploying the contract to Midnight Preview
+
+Requirements: Compact toolchain `0.31.1` (`compact update 0.31.1`), a local proof
+server (`docker run -p 6300:6300 midnightntwrk/proof-server:8.1.0 midnight-proof-server -v`),
+and a wallet seed funded with tNIGHT from the
+[Preview faucet](https://midnight-tmnight-preview.nethermind.dev/).
+
+```bash
+npm run contract:compile
+export MIDNIGHT_WALLET_SEED=<hex seed>          # never commit this
+export MIDNIGHT_NETWORK=preview                 # preview | preprod | undeployed
+export MIDNIGHT_PROOF_SERVER=http://localhost:6300
+npm run contract:deploy
+```
+
+The script derives the shielded/unshielded/DUST keys from the seed, registers
+NIGHT UTXOs for DUST generation when needed, deploys via `midnight-js`, and writes
+the resulting address to `deployments/<network>.json`.
+
 ## Testing
 
 ```bash
