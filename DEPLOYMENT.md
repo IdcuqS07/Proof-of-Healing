@@ -1,4 +1,20 @@
-# Deployment Guide - Vercel
+# Deployment Guide
+
+## Smart contract (Midnight)
+
+See [scripts/deploy/README.md](scripts/deploy/README.md). Short version:
+
+```bash
+cd scripts/deploy && npm install && cd ../..
+export MIDNIGHT_NETWORK=preprod
+export MIDNIGHT_WALLET_SEED=<funded 64-hex seed>
+export MIDNIGHT_PROOF_SERVER=http://127.0.0.1:6300
+npm run deploy:contract
+```
+
+The deployed address is written to `contracts/deployment.json`.
+
+# Frontend - Vercel
 
 ## Prerequisites
 - GitHub/GitLab/Bitbucket account

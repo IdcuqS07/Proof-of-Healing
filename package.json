@@ -9,7 +9,8 @@
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "deploy:contract": "npm --prefix scripts/deploy run compile && npm --prefix scripts/deploy run deploy"
   },
   "dependencies": {
     "idb": "^8.0.3",
