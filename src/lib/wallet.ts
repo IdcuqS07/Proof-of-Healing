@@ -1,3 +1,5 @@
+import { MIDNIGHT_NETWORK } from "./midnight";
+
 export interface WalletState {
   address: string;
   balance: number;
@@ -26,7 +28,7 @@ export interface ConnectedAPI {
   getDustAddress(): Promise<{ dustAddress: string }>;
 }
 
-const EXPECTED_NETWORK_ID = "preview";
+const EXPECTED_NETWORK_ID = MIDNIGHT_NETWORK;
 
 declare global {
   interface Window {
