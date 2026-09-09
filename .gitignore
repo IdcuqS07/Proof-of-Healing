@@ -34,3 +34,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# contract deploy tooling
+/scripts/deploy/node_modules
+/scripts/deploy/build
+/scripts/deploy/.private-state
