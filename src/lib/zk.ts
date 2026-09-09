@@ -14,8 +14,6 @@ export interface ZkProof {
   simulated: boolean;
 }
 
-const PROOF_SERVER_URL = process.env.NEXT_PUBLIC_MIDNIGHT_PROOF_SERVER;
-
 /**
  * Builds a proof for a circuit. Custom circuits use local simulator
  * (proof server only supports Midnight built-in circuits like Zswap).
