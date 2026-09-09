@@ -17,6 +17,7 @@ import type { FinalizedTransaction } from "@midnight-ntwrk/midnight-js-protocol/
 import type { UnboundTransaction } from "@midnight-ntwrk/midnight-js-types";
 import { Contract as ProofOfHealingContract } from "../../contracts/build/contract/index.js";
 import { networkConfig, proofServerUrl } from "./config.mjs";
+import { seedFromEnv } from "./seed.mjs";
 import { buildWallet, ensureDust } from "./wallet.mjs";
 
 type CircuitName =
@@ -61,17 +62,6 @@ const witnesses = {
 function privateStatePassword(seedHex: string): string {
   const digest = createHash("sha256").update(`poh-private-state:${seedHex}`).digest("hex");
   return `Poh-${digest.slice(0, 24)}!`;
-}
-
-function seedFromEnv(): string {
-  const seed = process.env.MIDNIGHT_WALLET_SEED?.trim();
-  if (!seed) {
-    throw new Error("MIDNIGHT_WALLET_SEED is not set");
-  }
-  if (!/^[0-9a-fA-F]+$/.test(seed)) {
-    throw new Error("MIDNIGHT_WALLET_SEED must be hex-encoded (no spaces, no 0x prefix)");
-  }
-  return seed.toLowerCase();
 }
 
 async function main(): Promise<void> {

@@ -2,16 +2,14 @@ import { Buffer } from "buffer";
 import { createKeystore, HDWallet, Roles } from "@midnightntwrk/wallet-sdk";
 import { getNetworkId, setNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
 import { networkConfig } from "./config.mjs";
+import { seedFromEnv } from "./seed.mjs";
 
 /**
  * Prints the unshielded (NIGHT) addresses derived from MIDNIGHT_WALLET_SEED for
  * the first few accounts/indices, so a faucet payment can be matched to a key.
  */
 function main(): void {
-  const seed = process.env.MIDNIGHT_WALLET_SEED?.trim();
-  if (!seed) {
-    throw new Error("MIDNIGHT_WALLET_SEED is not set");
-  }
+  const seed = seedFromEnv();
   setNetworkId(networkConfig(process.env.MIDNIGHT_NETWORK).networkId);
 
   const hd = HDWallet.fromSeed(Buffer.from(seed, "hex"));

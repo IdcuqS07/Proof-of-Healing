@@ -91,7 +91,7 @@ and a wallet seed funded with tNIGHT from the
 
 ```bash
 npm run contract:compile
-export MIDNIGHT_WALLET_SEED=<hex seed>          # never commit this
+export MIDNIGHT_WALLET_SEED=<hex seed or 24-word phrase>   # never commit this
 export MIDNIGHT_NETWORK=preview                 # preview | preprod | undeployed
 export MIDNIGHT_PROOF_SERVER=http://localhost:6300
 npm run contract:deploy
@@ -100,6 +100,11 @@ npm run contract:deploy
 The script derives the shielded/unshielded/DUST keys from the seed, registers
 NIGHT UTXOs for DUST generation when needed, deploys via `midnight-js`, and writes
 the resulting address to `deployments/<network>.json`.
+
+The contract currently live on Preview is
+`f507451238ac296f81bdd0d19600c5e694f51f5fd16c87f929b9945b1f769408`. The app reads
+it from `deployments/preview.json` via `src/lib/midnight.ts`; override it with
+`NEXT_PUBLIC_MIDNIGHT_CONTRACT_ADDRESS` and `NEXT_PUBLIC_MIDNIGHT_NETWORK`.
 
 ## Testing
 
